@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <link rel="icon" href="./logo.jpg" type="image/jpg">    
+    
+    
+    <title>Fidget Globe Tool</title>
+
+
+    <style>
+        :root { --accent: #00d4ff; --warning: #ff3131; }
+        body { 
+            margin: 0; background: #000; touch-action: none; 
+            font-family: 'Courier New', monospace;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh; overflow: hidden;
+            -webkit-user-select: none; user-select: none;
+        }
+
+        #portrait-note {
+            display: none; color: var(--warning); font-size: 13px; font-weight: bold;
+            margin-bottom: 20px; letter-spacing: 2px; text-align: center;
+            border: 1px solid var(--warning); padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 10px rgba(255, 49, 49, 0.2);
+            animation: pulse 2s infinite; z-index: 100; pointer-events: none;
+        }
+        #portrait-note span { display: block; font-size: 20px; margin-top: 4px; color: #fff; }
+
+        @media (orientation: portrait) { #portrait-note { display: block; } }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
+        #viewport { width: 100vw; height: 50vw; position: relative; background: #000; overflow: hidden; }
+        
+        #data-deck {
+            position: absolute; bottom: 10px; display: flex; gap: 8px; 
+            background: rgba(0, 0, 0, 0.9); padding: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; 
+            backdrop-filter: blur(10px); z-index: 10;
+        }
+        .input-group { display: flex; flex-direction: column; align-items: center; }
+        .input-group label { color: var(--accent); font-size: 9px; margin-bottom: 3px; opacity: 0.8; }
+        input {
+            width: 60px; background: #0a0a0a; border: 1px solid rgba(255,255,255,0.2);
+            color: white; text-align: center; font-size: 13px; padding: 6px; border-radius: 4px;
+        }
+        input:focus { border-color: var(--accent); outline: none; }
+
+        #ui-ring {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            height: 95%; aspect-ratio: 1 / 1; border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="portrait-note">LANDSCAPE RECOMMENDED<span>PLEASE ROTATE DEVICE</span></div>
+
+    <div id="viewport"><div id="ui-ring"></div></div>
+    
+    <div id="data-deck">
+        <div class="input-group"><label>LONGITUDE</label><input type="number" id="inp-lon" placeholder="0"></div>
+        <div class="input-group"><label>LATITUDE</label><input type="number" id="inp-lat" placeholder="0"></div>
+        <div class="input-group"><label>ROLL</label><input type="number" id="inp-roll" placeholder="0"></div>
+    </div>
+
+    <script type="importmap"> { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } } </script>
+    <script type="module">
+        import * as THREE from 'three';
+
+        const container = document.getElementById('viewport');
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        
+        const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
+        
+        // FIX: Configure texture wrapping to prevent the "Ghost Line" seam
+        const texture = loader.load('./earth_2048x1024.jpg', (tex) => {
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+        });
+
+        const material = new THREE.ShaderMaterial({
+            uniforms: { uTexture: { value: texture }, uMatrix: { value: new THREE.Matrix3() } },
+            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position, 1.0); }`,
+            fragmentShader: `
+                uniform sampler2D uTexture;
+                uniform mat3 uMatrix;
+                varying vec2 vUv;
+                void main() {
+                    vec2 uv = vUv * 2.0 - 1.0;
+                    float d = length(uv);
+                    if (d > 0.95) discard; 
+                    
+                    float lon = (vUv.x - 0.5) * 6.2831853;
+                    float lat = (vUv.y - 0.5) * 3.1415926;
+                    vec3 p = vec3(cos(lat)*cos(lon), cos(lat)*sin(lon), sin(lat));
+                    vec3 p_rot = uMatrix * p;
+                    
+                    float phi = asin(clamp(p_rot.z, -1.0, 1.0));
+                    float lam = atan(p_rot.y, p_rot.x);
+                    
+                    float u = fract(lam * 0.15915494 + 0.5);
+                    float v = phi * 0.31830988 + 0.5;
+                    
+                    vec4 color = texture2D(uTexture, vec2(u, v));
+                    
+                    float rim = pow(d/0.95, 20.0);
+                    color.rgb += vec3(0.1, 0.4, 0.8) * rim;
+                    
+                    gl_FragColor = vec4(color.rgb, 1.0);
+                }
+            `,
+            transparent: true
+        });
+
+        scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+
+        let currentRotation = new THREE.Quaternion();
+        let isDragging = false, isRolling = false;
+        let vStart = new THREE.Vector3(), lastAngle = 0, velocity = new THREE.Quaternion();
+        
+        const inputs = {
+            lon: document.getElementById('inp-lon'),
+            lat: document.getElementById('inp-lat'),
+            roll: document.getElementById('inp-roll')
+        };
+
+        const updateUI = () => {
+            if (document.activeElement.tagName === 'INPUT') return;
+            const m = new THREE.Matrix4().makeRotationFromQuaternion(currentRotation);
+            const e = m.elements;
+            const lat = Math.asin(THREE.MathUtils.clamp(e[2], -1, 1));
+            const lon = Math.atan2(e[1], e[0]);
+            const roll = Math.atan2(e[4], e[8]);
+            inputs.lon.value = Math.round(THREE.MathUtils.radToDeg(lon));
+            inputs.lat.value = Math.round(THREE.MathUtils.radToDeg(lat));
+            inputs.roll.value = Math.round(THREE.MathUtils.radToDeg(roll));
+        };
+
+        const updateRotation = () => {
+            const lat = THREE.MathUtils.degToRad(parseFloat(inputs.lat.value) || 0);
+            const lon = THREE.MathUtils.degToRad(parseFloat(inputs.lon.value) || 0);
+            const roll = THREE.MathUtils.degToRad(parseFloat(inputs.roll.value) || 0);
+            const qLon = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), lon);
+            const qLat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, -1, 0), lat);
+            const qRoll = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), roll);
+            currentRotation.copy(qLon.multiply(qLat).multiply(qRoll));
+            velocity.set(0,0,0,1);
+        };
+
+        Object.values(inputs).forEach(inp => {
+            inp.addEventListener('input', updateRotation);
+            inp.addEventListener('focus', () => { velocity.set(0,0,0,1); });
+        });
+
+        const getMouse = (cX, cY) => {
+            const r = container.getBoundingClientRect();
+            const x = (cX - r.left - r.width/2) / (r.height * 0.475);
+            const y = -(cY - r.top - r.height/2) / (r.height * 0.475);
+            const d = Math.sqrt(x*x + y*y);
+            return { v: new THREE.Vector3(d < 1 ? Math.sqrt(1-d*d) : 0, x, y).normalize(), a: Math.atan2(y, x), isR: d > 1 };
+        };
+
+        const onStart = (e) => {
+            const t = e.touches ? e.touches[0] : e;
+            const s = getMouse(t.clientX, t.clientY);
+            velocity.set(0,0,0,1);
+            if (s.isR) { isRolling = true; lastAngle = s.a; }
+            else { isDragging = true; vStart = s.v; }
+            if (document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+        };
+
+        const onMove = (e) => {
+            if (!isDragging && !isRolling) return;
+            const t = e.touches ? e.touches[0] : e;
+            const s = getMouse(t.clientX, t.clientY);
+            let dq = new THREE.Quaternion();
+            if (isDragging) {
+                dq.setFromUnitVectors(s.v, vStart);
+                currentRotation.multiply(dq);
+                vStart = s.v;
+            } else {
+                let diff = s.a - lastAngle;
+                if (diff > Math.PI) diff -= Math.PI*2; if (diff < -Math.PI) diff += Math.PI*2;
+                dq.setFromAxisAngle(new THREE.Vector3(-1, 0, 0), diff);
+                currentRotation.multiply(dq);
+                lastAngle = s.a;
+            }
+            velocity.copy(dq);
+            updateUI();
+        };
+
+        window.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', () => { isDragging = isRolling = false; });
+        container.addEventListener('touchstart', (e) => { onStart(e); e.preventDefault(); }, {passive: false});
+        container.addEventListener('touchmove', (e) => { onMove(e); e.preventDefault(); }, {passive: false});
+        window.addEventListener('touchend', () => { isDragging = isRolling = false; });
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!isDragging && !isRolling && velocity.lengthSq() > 0.0000001) {
+                currentRotation.multiply(velocity);
+                velocity.slerp(new THREE.Quaternion(0, 0, 0, 1), 0.08);
+                updateUI();
+            }
+            const m3 = new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(currentRotation));
+            material.uniforms.uMatrix.value.copy(m3);
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        updateUI();
+    </script>
+</body>
+</html>
