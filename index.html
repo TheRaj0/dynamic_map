@@ -33,7 +33,13 @@
         @media (orientation: portrait) { #portrait-note { display: block; } }
         @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
 
-        #viewport { width: 100vw; height: 50vw; position: relative; background: #000; overflow: hidden; }
+        #viewport { 
+            width: min(100vw, 200vh);
+            aspect-ratio: 2;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+        }
         
         #data-deck {
             position: absolute; bottom: 10px; display: flex; gap: 8px; 
@@ -83,7 +89,6 @@
         const loader = new THREE.TextureLoader();
         loader.setCrossOrigin('anonymous');
         
-        // FIX: Configure texture wrapping to prevent the "Ghost Line" seam
         const texture = loader.load('./earth_2048x1024.jpg', (tex) => {
             tex.wrapS = THREE.RepeatWrapping;
             tex.minFilter = THREE.LinearFilter;
@@ -100,7 +105,7 @@
                 void main() {
                     vec2 uv = vUv * 2.0 - 1.0;
                     float d = length(uv);
-                    if (d > 0.95) discard; 
+                    if (d > 1.35) discard; 
                     
                     float lon = (vUv.x - 0.5) * 6.2831853;
                     float lat = (vUv.y - 0.5) * 3.1415926;
@@ -115,7 +120,7 @@
                     
                     vec4 color = texture2D(uTexture, vec2(u, v));
                     
-                    float rim = pow(d/0.95, 20.0);
+                    float rim = pow(d/1.25, 5.0);
                     color.rgb += vec3(0.1, 0.4, 0.8) * rim;
                     
                     gl_FragColor = vec4(color.rgb, 1.0);
