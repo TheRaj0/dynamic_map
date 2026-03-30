@@ -1,0 +1,148 @@
+:root { 
+    --accent: #00d4ff; 
+    --accent-hover: #5ce1e6;
+    --bg-glass: rgba(12, 12, 18, 0.9); 
+    --border-glass: rgba(255, 255, 255, 0.15);
+    --text-dim: rgba(255,255,255,0.5);
+    --warning: #ff3131; 
+}
+
+body { 
+    margin: 0; background: #000; touch-action: none; 
+    font-family: 'Courier New', monospace;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100vh; overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+}
+
+#portrait-note {
+    display: none; color: var(--warning); font-size: 11px; font-weight: bold;
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    border: 1px solid var(--warning); padding: 8px 15px; border-radius: 6px;
+    background: rgba(0, 0, 0, 0.9); z-index: 100; letter-spacing: 1px;
+}
+
+@media (orientation: portrait) { #portrait-note { display: block; } }
+
+#viewport { 
+    width: min(100vw, 200vh);
+    aspect-ratio: 2;
+    position: relative;
+    background: #000;
+    overflow: hidden;
+}#data-deck {
+    position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 15px; 
+    align-items: stretch; 
+    background: var(--bg-glass); padding: 10px 20px; 
+    border: 1px solid var(--border-glass); border-radius: 8px; 
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); 
+    z-index: 10; max-width: fit-content; flex-wrap: nowrap;
+}
+
+.panel-section { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    gap: 8px; 
+}
+
+.section-title { 
+    color: var(--accent); 
+    font-size: 8px; 
+    letter-spacing: 1.5px; 
+    font-weight: bold; 
+    text-align: center; 
+    width: 100%;
+    opacity: 0.7;
+    text-transform: uppercase; 
+    text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+    line-height: 12px;
+}
+
+.row { 
+    display: flex; 
+    gap: 6px; 
+    margin-top: auto; 
+    align-items: flex-end; 
+    justify-content: center; 
+}
+
+.divider { 
+    width: 1px; 
+    height: 32px; 
+    background: linear-gradient(to bottom, transparent, var(--border-glass), transparent); 
+    align-self: center; 
+}
+
+input, select, button {
+    height: 28px; 
+    box-sizing: border-box; 
+    background: rgba(0,0,0,0.4); 
+    border: 1px solid var(--border-glass);
+    color: white; 
+    font-size: 11px; 
+    font-family: inherit; 
+    outline: none;
+    -webkit-tap-highlight-color: transparent; /* Cleaner mobile feel */
+}
+.section-title { 
+    color: var(--accent); 
+    font-size: 8px; 
+    letter-spacing: 1.5px; 
+    font-weight: bold; 
+    text-align: center; 
+    width: 100%;
+    opacity: 0.7;
+    text-transform: uppercase; 
+    text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+}
+
+.input-group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.input-group label { color: var(--text-dim); font-size: 8px; line-height: 1; }
+
+input, select, button {
+    height: 28px; box-sizing: border-box; 
+    background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass);
+    color: white; font-size: 11px; font-family: inherit; outline: none;
+    transition: all 0.1s ease;
+}
+
+input { 
+    width: 52px; 
+    padding: 0; 
+    text-align: center;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input:hover, select:hover, button:hover { border-color: rgba(255,255,255,0.4); }
+input:focus { border-color: var(--accent); background: rgba(0, 212, 255, 0.05); }
+
+select { width: 125px; cursor: pointer; padding: 0 5px; }
+
+#btn-locate, #btn-reset { 
+    width: 32px; padding: 0; color: var(--accent); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+
+#btn-reset { color: #fff; opacity: 0.8; }
+#btn-reset:hover { opacity: 1; color: var(--accent); }
+
+.tog-btn { width: 45px; cursor: pointer; font-size: 9px; font-weight: bold; color: var(--text-dim); }
+.tog-btn.active { 
+    border-color: var(--accent); color: var(--accent); 
+    background: rgba(0, 212, 255, 0.05);
+    box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.1); 
+}
+
+#ui-ring {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    height: 95%; aspect-ratio: 1 / 1; border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 50%; pointer-events: none;
+}
