@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <link rel="icon" href="./assets/logo.jpg" type="image/jpg">    
+    <link rel="icon" href="./assets/logo.jpg" type="image/jpg">
     <title>Fidget Globe Web App</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="portrait-note">LANDSCAPE RECOMMENDED</div>
-    <div id="viewport"><div id="ui-ring"></div></div>
-    
+    <div id="viewport">
+        <div id="ui-ring"></div>
+    </div>
+
     <div id="data-deck">
         <div class="panel-section">
             <span class="section-title">PROJECTION</span>
@@ -34,8 +36,9 @@
         <div class="panel-section">
             <span class="section-title">TRANSFORM</span>
             <div class="row">
-                <div class="input-group"><label>LON</label><input type="number" id="inp-lon" step="1"></div>
-                <div class="input-group"><label>LAT</label><input type="number" id="inp-lat" step="1"></div>
+                <div class="input-group"><label>SCALE</label><input type="number" id="inp-scale" step="0.1" value="1.0"></div>
+                <div class="input-group"><label>LON</label><input type="number" id="inp-lon" step="1" value="0"></div>
+                <div class="input-group"><label>LAT</label><input type="number" id="inp-lat" step="1" value="0"></div>
                 <div class="input-group"><label>ROLL</label><input type="number" id="inp-roll" step="1" value="0"></div>
                 <div class="input-group"><label>GPS</label><button id="btn-locate" title="Snap to location">⌖</button></div>
                 <div class="input-group"><label>CLR</label><button id="btn-reset" title="Reset to Zero">↺</button></div>
@@ -53,8 +56,8 @@
         </div>
     </div>
 
-    <script type="importmap"> 
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } } 
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
     </script>
     <script type="module" src="./script.js"></script>
 </body>
